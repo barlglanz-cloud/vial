@@ -201,6 +201,14 @@
   .empty.warn{border-color:var(--class2);border-style:solid;border-left-width:4px;color:#7A5300;background:#FFF8EC}
   #fatal{display:none;background:var(--class1);color:#fff;padding:12px 16px;font-size:13px;line-height:1.6;margin-top:14px}
 
+  .bfacts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .bfacts:empty{display:none}
+  .bfact{border:1px solid var(--rule);padding:8px 12px;min-width:88px;background:var(--paper)}
+  .bfact.wide{min-width:150px}
+  .bfact-v{display:block;font-family:'Archivo',sans-serif;font-weight:800;font-size:19px;line-height:1.1}
+  .bfact-k{display:block;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#8A8F97;margin-top:3px}
+  .bfact-s{display:block;font-size:10px;color:#6B7078;margin-top:2px}
+
   .owner{background:var(--card);border:1px solid var(--rule);border-left:5px solid var(--class3);
          padding:11px 14px;margin-bottom:6px}
   .owner.lot{border-left-color:var(--permit)}
@@ -208,6 +216,53 @@
   .owner-name{font-weight:600;font-size:14px}
   .owner-role{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#8A8F97}
   .owner-addr{font-size:12.5px;margin-top:4px;color:#4A4F57}
+
+  .alertdot{background:var(--permit);color:#fff;padding:1px 6px;font-family:'Archivo',sans-serif;
+            font-weight:800;letter-spacing:0;font-size:10px;margin-left:8px}
+  .savedbtn.alerting{border-color:var(--permit)}
+  .saved-item.changed{border-left-color:var(--permit);border-left-width:8px}
+  .changepill{display:inline-block;background:var(--permit);color:#fff;font-size:10px;
+              letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;margin:4px 0 0}
+  .changebanner{background:#FFF0F6;border:2px solid var(--permit);padding:12px 14px;margin:0 0 14px;
+                display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .changebanner strong{font-size:13px}
+  .changebanner span{font-size:12px;color:#8A3060;flex:1}
+  .flag{font-family:'Archivo',sans-serif;font-weight:800;font-size:9px;letter-spacing:.1em;
+        text-transform:uppercase;padding:2px 6px;color:#fff;background:var(--permit)}
+  .flag.done{background:var(--ok)}
+
+  .sortbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 14px}
+  .sortlab{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#8A8F97}
+  .sortsel{font:inherit;font-size:12px;padding:7px 10px;background:var(--card);
+           border:1.5px solid var(--ink);color:var(--ink);border-radius:0;cursor:pointer}
+  .sortsel:focus{outline:none;box-shadow:3px 3px 0 var(--permit)}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .fchip{font:inherit;font-size:11px;letter-spacing:.06em;padding:6px 10px;cursor:pointer;
+         background:var(--card);border:1px solid var(--rule);color:#6B7078}
+  .fchip:hover,.fchip:focus{border-color:var(--permit);color:var(--permit);outline:none}
+  .fchip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .viewbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;
+           border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
+           padding:8px 0;margin:0 0 12px}
+  .viewbar.active{border-color:var(--permit);background:#FFF7FB}
+  .viewdesc{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#6B7078}
+  .viewbar.active .viewdesc{color:var(--permit)}
+  .clearview{font:inherit;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+             background:none;border:1px solid var(--permit);color:var(--permit);
+             padding:5px 10px;cursor:pointer}
+  .clearview:hover,.clearview:focus{background:var(--permit);color:#fff;outline:none}
+  .saved-item .sub.dim{color:#B4B8BE}
+  .kind{font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:1px 5px;
+        border:1px solid currentColor;color:#8A8F97}
+  .kind.person{color:#15704A}
+  .kind.company{color:#8A3060}
+  .kind.public{color:#5B6068}
+  .ownergroup{margin-bottom:18px}
+  .ownerhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+             border-bottom:1.5px solid var(--ink);padding-bottom:5px;margin-bottom:6px}
+  .ownerhead-name{font-family:'Archivo Narrow',sans-serif;font-weight:700;text-transform:uppercase;
+                  letter-spacing:.04em;font-size:14px}
+  .ownerhead-n{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#8A8F97}
 
   .status{margin-top:24px;font-size:12px;color:#8A8F97;line-height:1.7}
   .empty{background:var(--card);border:1px dashed var(--rule);padding:14px;font-size:13px;color:#666}
@@ -349,9 +404,17 @@ const Saved = (() => {
     },
     list()      { return cache; },
     has(bin)    { return cache.some(x => x.bin === bin); },
+    get(bin)    { return cache.find(x => x.bin === bin); },
     async add(b) {
       if (cache.some(x => x.bin === b.bin)) return;
       cache.unshift({ bin: b.bin, bbl: b.bbl || "", label: b.label, savedAt: Date.now() });
+      await persist();
+    },
+    /** Merge fields into one saved building and write to storage. */
+    async update(bin, patch) {
+      const entry = cache.find(x => x.bin === bin);
+      if (!entry) return;
+      Object.assign(entry, patch);
       await persist();
     },
     async remove(bin) {
@@ -372,6 +435,22 @@ function paintCount() {
   const n = Saved.list().length;
   el.textContent = n;
   el.dataset.n = n;
+
+  // A separate dot for "something changed", so the count still means count.
+  const btn = $("#openSaved");
+  const changed = changedCount();
+  btn.classList.toggle("alerting", changed > 0);
+  let dot = btn.querySelector(".alertdot");
+  if (changed > 0) {
+    if (!dot) {
+      dot = document.createElement("span");
+      dot.className = "alertdot";
+      btn.appendChild(dot);
+    }
+    dot.textContent = changed + " updated";
+  } else if (dot) {
+    dot.remove();
+  }
 }
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const sq  = s => String(s).replace(/'/g, "''");   // escape for SoQL string literals
@@ -690,10 +769,10 @@ async function loadBuilding(b) {
   // Fired after the violations render rather than awaited alongside them, so a
   // slow ownership query never delays the thing people came for.
   fetchOwnership(b.bin, b.bbl)
-    .then(renderOwnership)
+    .then(o => renderOwnership(o, b.bin))
     .catch(err => {
       console.error("ownership failed:", err);
-      renderOwnership({ plutoOwner: null, contacts: [], registration: null, failed: true });
+      renderOwnership({ plutoOwner: null, contacts: [], registration: null, failed: true }, b.bin);
     });
   $("#out").scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -735,7 +814,13 @@ function fmt(d) {
   return isNaN(t) ? s : t.toLocaleDateString("en-US");
 }
 
+// Set while a record renders so rowHtml can flag individual violations.
+let recordChanges = null;
+
 function render(b, sets, errors = []) {
+  const savedEntry = Saved.get(b.bin);
+  recordChanges = (savedEntry && !savedEntry.seen && hasChanges(savedEntry.changes))
+    ? savedEntry.changes : null;
   const byDate = (x, y) => (y.sortKey || "").localeCompare(x.sortKey || "");
   const all = [
     ...sets.legacy.map(r => normalize(r, "DOB", b.bin)),
@@ -764,6 +849,7 @@ function render(b, sets, errors = []) {
         <div><b>BIN</b>${esc(b.bin)}</div>
         <div><b>BBL</b>${esc(b.bbl || "—")}</div>
       </div>
+      <div id="bfacts" class="bfacts"></div>
       <div class="actions">
         <button class="dob save ${Saved.has(b.bin) ? "on" : ""}" id="saveBtn">
           ${Saved.has(b.bin) ? "★ Saved" : "☆ Save building"}
@@ -781,6 +867,16 @@ function render(b, sets, errors = []) {
       <div class="tile"><div class="n" style="color:var(--class1)">${open}</div><div class="k">Look open</div></div>
       <div class="tile"><div class="n">${sets.ecb.length}</div><div class="k">OATH / ECB</div></div>
     </div>
+
+    ${recordChanges ? `<div class="changebanner">
+      <strong>Changed since you last looked</strong>
+      <span>${[
+        recordChanges.added?.length ? recordChanges.added.length + " new violation" + (recordChanges.added.length === 1 ? "" : "s") : "",
+        recordChanges.resolved?.length ? recordChanges.resolved.length + " resolved" : "",
+        recordChanges.reopened?.length ? recordChanges.reopened.length + " reopened" : ""
+      ].filter(Boolean).join(" · ")}</span>
+      <button class="dob" id="markSeen">Mark as seen</button>
+    </div>` : ""}
 
     ${errors.length ? `<p class="note warn"><strong>Incomplete.</strong> ${errors.length} of 3 datasets
       did not load (${esc(errors[0].message)}), so the counts above are lower than the real figure.</p>` : ""}
@@ -800,6 +896,13 @@ function render(b, sets, errors = []) {
 
   wireRecordNav();
 
+  const markSeen = $("#markSeen");
+  if (markSeen) markSeen.onclick = async () => {
+    await Saved.update(b.bin, { seen: true, changes: null });
+    recordChanges = null;
+    render(b, sets, errors);   // redraw without the flags
+  };
+
   const save = $("#saveBtn");
   save.onclick = async () => {
     const on = await Saved.toggle(b);
@@ -811,6 +914,221 @@ function render(b, sets, errors = []) {
 // ---------------------------------------------------------------------------
 // THE FOLDER
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// SORTING & FILTERING THE SAVED LIST
+// ---------------------------------------------------------------------------
+const SORTS = {
+  saved:      { label: "Recently saved",         fn: (a, b) => (b.savedAt || 0) - (a.savedAt || 0) },
+  name_az:    { label: "Address A\u2013Z",           fn: (a, b) => addrKey(a).localeCompare(addrKey(b)) },
+  name_za:    { label: "Address Z\u2013A",           fn: (a, b) => addrKey(b).localeCompare(addrKey(a)) },
+  total_desc: { label: "Most violations",        fn: (a, b) => num(b, "total") - num(a, "total") },
+  total_asc:  { label: "Fewest violations",      fn: (a, b) => num(a, "total") - num(b, "total") },
+  open_desc:  { label: "Most active (open)",     fn: (a, b) => num(b, "open") - num(a, "open") },
+  open_asc:   { label: "Least active (open)",    fn: (a, b) => num(a, "open") - num(b, "open") },
+  issue_desc: { label: "Newest violation",       fn: (a, b) => dateKey(b, "lastIssue").localeCompare(dateKey(a, "lastIssue")) },
+  issue_asc:  { label: "Oldest last violation",  fn: (a, b) => dateKey(a, "lastIssue").localeCompare(dateKey(b, "lastIssue")) },
+  res_desc:   { label: "Most recently resolved", fn: (a, b) => dateKey(b, "lastResolved").localeCompare(dateKey(a, "lastResolved")) },
+  res_asc:    { label: "Least recently resolved",fn: (a, b) => dateKey(a, "lastResolved").localeCompare(dateKey(b, "lastResolved")) },
+  age_old:    { label: "Oldest building",        fn: (a, b) => year(a) - year(b) },
+  age_new:    { label: "Newest building",        fn: (a, b) => year(b) - year(a) }
+};
+
+// ---------------------------------------------------------------------------
+// Is the owner a person or a company?
+// ---------------------------------------------------------------------------
+// PLUTO gives one free-text name with no type field, so this is inference.
+// Order matters: check for organisation words first, because plenty of
+// companies are named after the person who founded them ("SMITH REALTY LLC"
+// would otherwise read as a person).
+const PUBLIC_WORDS = new RegExp("\\b(" + [
+  "CITY OF NEW YORK","NEW YORK CITY","NYC","NYCHA","HOUSING AUTHORITY","STATE OF NEW YORK",
+  "DEPT","DEPARTMENT","AUTHORITY","BOARD OF EDUCATION","MTA","PORT AUTHORITY","MUNICIPAL"
+].join("|") + ")\\b");
+
+const COMPANY_WORDS = new RegExp("\\b(" + [
+  "LLC","L L C","INC","INCORPORATED","CORP","CORPORATION","CO","COMPANY","LP","LLP","LTD",
+  "REALTY","REALTIES","PROPERTIES","PROPERTY","ASSOCIATES","ASSOC","PARTNERS","PARTNERSHIP",
+  "HOLDINGS","HOLDING","MANAGEMENT","MGMT","GROUP","ENTERPRISES","DEVELOPMENT","DEVELOPERS",
+  "EQUITIES","INVESTORS","INVESTMENT","INVESTMENTS","VENTURES","CAPITAL","FUND","TRUST",
+  "ESTATES","BUILDERS","CONSTRUCTION","APARTMENTS","APTS","HOUSING","HDFC","COOP","CO-OP",
+  "CONDOMINIUM","CONDO","CHURCH","SYNAGOGUE","TEMPLE","MOSQUE","FOUNDATION","SOCIETY",
+  "HOSPITAL","UNIVERSITY","COLLEGE","SCHOOL","CENTER","CENTRE","INSTITUTE","ASSOCIATION",
+  "TENANTS","OWNERS","MANOR","TOWERS","PLAZA","GARDENS","HOUSE"
+].join("|") + ")\\b");
+
+function classifyOwner(name) {
+  const n = (name || "").toUpperCase().replace(/[.]/g, "").replace(/\s+/g, " ").trim();
+  if (!n) return "";
+  if (PUBLIC_WORDS.test(n)) return "public";
+  if (COMPANY_WORDS.test(n)) return "company";
+
+  // PLUTO writes individuals as "LASTNAME, FIRSTNAME" more often than not.
+  if (/^[A-Z][A-Z'\-]+,\s*[A-Z]/.test(n)) return "person";
+
+  // Otherwise: a short run of name-like words, allowing joint owners.
+  const words = n.replace(/&|\bAND\b/g, " ").split(/\s+/).filter(Boolean);
+  const nameish = words.every(w => /^[A-Z][A-Z'\-]*$/.test(w));
+  if (nameish && words.length >= 2 && words.length <= 5) return "person";
+
+  return "";   // genuinely unclear — never guess
+}
+
+const OWNER_KIND_LABEL = { person: "Individual", company: "Company", public: "Public/institution" };
+
+// Unknown year sorts last in both directions, like the other missing stats.
+function year(b) {
+  const y = b.facts?.yearBuilt;
+  return y || (sortKey === "age_old" ? 99999 : -1);
+}
+
+// PLUTO owner strings are inconsistent — spacing, punctuation, and the legal
+// suffix all vary between lots owned by the same entity. Normalise for grouping
+// but show the original.
+function ownerKey(b) {
+  const raw = (b.facts?.ownerName || "").toUpperCase();
+  if (!raw) return "";
+  return raw
+    .replace(/[.,]/g, " ")
+    .replace(/\b(LLC|L L C|INC|CORP|CO|LP|LLP|REALTY|ASSOCIATES|ASSOC|PARTNERS|HOLDINGS|MANAGEMENT|MGMT)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function groupByOwner(list) {
+  const groups = new Map();
+  for (const b of list) {
+    const key = ownerKey(b) || "\u0000unknown";
+    if (!groups.has(key)) {
+      groups.set(key, { name: b.facts?.ownerName || "Owner not on file", items: [] });
+    }
+    groups.get(key).items.push(b);
+  }
+  // Biggest portfolios first; unknown owners last regardless of size.
+  return [...groups.entries()]
+    .sort((a, b) => {
+      if (a[0] === "\u0000unknown") return 1;
+      if (b[0] === "\u0000unknown") return -1;
+      return b[1].items.length - a[1].items.length;
+    })
+    .map(([, g]) => g);
+}
+
+// Sort on the street first, so "12 Ash St" and "400 Ash St" sit together rather
+// than being separated by every address that happens to start with a 2.
+function addrKey(b) {
+  const label = b.label || "";
+  const street = label.replace(/^[\d-]+\s+/, "").toUpperCase();
+  const house = parseInt(label, 10);
+  return street + " " + String(isNaN(house) ? 0 : house).padStart(6, "0");
+}
+
+// Unchecked buildings have no stats. Give them a value that sorts to the bottom
+// in either direction rather than randomly landing at the top.
+const num = (b, key) => b.stats ? (b.stats[key] ?? 0) : -1;
+const dateKey = (b, key) => (b.stats && b.stats[key]) || "";
+
+// No "all" entry: no active filters IS all. Filters combine with AND, so
+// "Company owner" plus "Has open" narrows to both.
+const FILTERS = {
+  open:    { label: "Has open",   fn: b => num(b, "open") > 0 },
+  clean:   { label: "None open",  fn: b => Boolean(b.stats) && b.stats.open === 0 },
+  updated: { label: "Updated",    fn: b => !b.seen && hasChanges(b.changes) },
+  person:  { label: "Individual owner", fn: b => ownerKind(b) === "person" },
+  company: { label: "Company owner",    fn: b => ownerKind(b) === "company" }
+};
+
+// HPD states the owner type outright (IndividualOwner / CorporateOwner), so when
+// a record has been opened and that is known, it overrides the guess from the name.
+function ownerKind(b) {
+  return b.hpdOwnerKind || b.facts?.ownerKind || "";
+}
+
+const DEFAULT_SORT = "saved";
+let sortKey = DEFAULT_SORT;
+let activeFilters = new Set();
+let groupOwner = false;
+
+const viewIsDefault = () =>
+  sortKey === DEFAULT_SORT && activeFilters.size === 0 && !groupOwner;
+
+// Remember the choice between visits \u2014 it is a preference, not state.
+try {
+  const pref = JSON.parse(localStorage.getItem("saved-view") || "{}");
+  if (SORTS[pref.sort]) sortKey = pref.sort;
+  if (Array.isArray(pref.filters)) {
+    activeFilters = new Set(pref.filters.filter(k => FILTERS[k]));
+  }
+  groupOwner = Boolean(pref.group);
+} catch {}
+
+function saveViewPref() {
+  try {
+    localStorage.setItem("saved-view",
+      JSON.stringify({ sort: sortKey, filters: [...activeFilters], group: groupOwner }));
+  } catch {}
+}
+
+function arrangeSaved(list) {
+  let out = list;
+  for (const key of activeFilters) out = out.filter(FILTERS[key].fn);
+  return [...out].sort(SORTS[sortKey].fn);
+}
+
+function resetView() {
+  sortKey = DEFAULT_SORT;
+  activeFilters.clear();
+  groupOwner = false;
+  saveViewPref();
+  showSaved();
+}
+
+// Plain-language description of what is currently on screen.
+function viewDescription(shown, total) {
+  const bits = [];
+  if (activeFilters.size) bits.push([...activeFilters].map(k => FILTERS[k].label).join(" + "));
+  if (sortKey !== DEFAULT_SORT) bits.push("by " + SORTS[sortKey].label.toLowerCase());
+  if (groupOwner) bits.push("grouped by owner");
+  const what = shown === total
+    ? `${total} building${total === 1 ? "" : "s"}`
+    : `${shown} of ${total}`;
+  return bits.length ? `${what} \u00b7 ${bits.join(" \u00b7 ")}` : what;
+}
+
+function statLine(b) {
+  if (!b.stats) return b.checkedAt ? "no data yet" : "not checked yet";
+  const bits = [b.stats.total + " total"];
+  if (b.stats.open) bits.push(b.stats.open + " open");
+  if (b.stats.lastIssue) bits.push("latest " + fmt(b.stats.lastIssue));
+  if (b.facts?.yearBuilt) bits.push("built " + b.facts.yearBuilt);
+  return bits.join(" \u00b7 ");
+}
+
+function savedCard(s) {
+  return `
+    <div class="saved-item ${!s.seen && hasChanges(s.changes) ? "changed" : ""}" data-bin="${esc(s.bin)}">
+      <button class="open">
+        <span class="addr">${esc(s.label)}</span>
+        ${changeSummary(s) ? `<span class="changepill">${esc(changeSummary(s))}</span>` : ""}
+        <span class="sub">${esc(statLine(s))}${ownerKind(s)
+          ? ` \u00b7 <span class="kind ${ownerKind(s)}">${esc(OWNER_KIND_LABEL[ownerKind(s)])}</span>` : ""}</span>
+        <span class="sub dim">BIN ${esc(s.bin)}${s.checkedAt
+          ? " \u00b7 checked " + esc(new Date(s.checkedAt).toLocaleDateString("en-US")) : ""}</span>
+      </button>
+      <button class="drop" title="Remove from saved" aria-label="Remove ${esc(s.label)}">\u2715</button>
+    </div>`;
+}
+
+function groupsHtml(list) {
+  return groupByOwner(list).map(g => `
+    <div class="ownergroup">
+      <div class="ownerhead">
+        <span class="ownerhead-name">${esc(g.name)}</span>
+        <span class="ownerhead-n">${g.items.length} building${g.items.length === 1 ? "" : "s"}</span>
+      </div>
+      ${g.items.map(savedCard).join("")}
+    </div>`).join("");
+}
+
 function showSaved() {
   // A page of its own: the hero and the whole search apparatus are hidden, so
   // there is nothing here but the buildings.
@@ -818,28 +1136,73 @@ function showSaved() {
   document.body.classList.remove("view-record");
   clearMessage();
   paintClear();
-  const list = Saved.list();
+  const all = Saved.list();
+  const list = arrangeSaved(all);
 
   $("#out").innerHTML = `
     <div class="folder">
-      <button class="dob backbtn" id="backHome">← Back to search</button>
+      <div class="navbar">
+        <button class="dob" id="backHome">← Back to search</button>
+        <button class="dob" id="checkNow">Check for updates now</button>
+      </div>
       <div class="head">
         <h2>Saved buildings</h2>
-        <span class="muted" style="font-size:12px">${list.length} building${list.length === 1 ? "" : "s"}</span>
       </div>
-      ${list.length ? list.map(s => `
-        <div class="saved-item" data-bin="${esc(s.bin)}">
-          <button class="open">
-            <span class="addr">${esc(s.label)}</span>
-            <span class="sub">BIN ${esc(s.bin)} · saved ${esc(new Date(s.savedAt).toLocaleDateString("en-US"))}</span>
-          </button>
-          <button class="drop" title="Remove from saved" aria-label="Remove ${esc(s.label)}">✕</button>
-        </div>`).join("")
-      : `<div class="empty">Nothing saved yet. Go back, look up a building and hit
-         <strong>Save building</strong> to keep it here.</div>`}
+
+      <div class="sortbar">
+        <label class="sortlab" for="sortSel">Sort</label>
+        <select id="sortSel" class="sortsel">
+          ${Object.entries(SORTS).map(([k, v]) =>
+            `<option value="${k}" ${k === sortKey ? "selected" : ""}>${esc(v.label)}</option>`).join("")}
+        </select>
+        <span class="sortlab">Show</span>
+        <div class="chips">
+          ${Object.entries(FILTERS).map(([k, v]) =>
+            `<button class="fchip ${activeFilters.has(k) ? "on" : ""}" data-filter="${k}"
+                     aria-pressed="${activeFilters.has(k)}">${esc(v.label)}</button>`).join("")}
+        </div>
+        <button class="fchip ${groupOwner ? "on" : ""}" id="groupToggle">Group by owner</button>
+      </div>
+
+      <div class="viewbar ${viewIsDefault() ? "" : "active"}">
+        <span class="viewdesc">${esc(viewDescription(list.length, all.length))}</span>
+        ${viewIsDefault() ? "" : `<button class="clearview" id="resetView">✕ Clear filters</button>`}
+      </div>
+      ${list.length ? (groupOwner ? groupsHtml(list) : list.map(savedCard).join(""))
+      : all.length
+        ? `<div class="empty">No saved buildings match this filter.
+           <button class="authlink" data-filter="all">Show all</button></div>`
+        : `<div class="empty">Nothing saved yet. Go back, look up a building and hit
+           <strong>Save building</strong> to keep it here.</div>`}
     </div>`;
 
   $("#backHome").onclick = goHome;
+  const check = $("#checkNow");
+  check.onclick = async () => {
+    check.disabled = true;
+    check.textContent = "Checking…";
+    await checkSavedBuildings({ force: true });
+    // showSaved has re-rendered by now if anything changed; guard the stale node.
+    const btn = $("#checkNow");
+    if (btn) { btn.disabled = false; btn.textContent = "Check for updates now"; }
+  };
+  const sel = $("#sortSel");
+  if (sel) sel.onchange = () => { sortKey = sel.value; saveViewPref(); showSaved(); };
+  const gt = $("#groupToggle");
+  if (gt) gt.onclick = () => { groupOwner = !groupOwner; saveViewPref(); showSaved(); };
+  document.querySelectorAll("[data-filter]").forEach(el => {
+    el.onclick = () => {
+      const k = el.dataset.filter;
+      if (k === "__clear") activeFilters.clear();
+      else if (activeFilters.has(k)) activeFilters.delete(k);
+      else activeFilters.add(k);
+      saveViewPref();
+      showSaved();          // re-renders immediately, so the bar updates on the spot
+    };
+  });
+  const rv = $("#resetView");
+  if (rv) rv.onclick = resetView;
+
   window.scrollTo({ top: 0, behavior: "smooth" });
 
   document.querySelectorAll(".saved-item").forEach(el => {
@@ -874,11 +1237,171 @@ function goHome() {
 $("#openSaved").onclick = showSaved;
 $("#goHome").onclick = goHome;
 
-Saved.load();
+// Check saved buildings in the background on every visit. Deliberately not
+// awaited: the page is usable immediately and badges appear as results land.
+Saved.load().then(() => checkSavedBuildings());
 
 // ---------------------------------------------------------------------------
-// OWNERSHIP
+// CHANGE DETECTION
 // ---------------------------------------------------------------------------
+// Each saved building keeps a signature: every violation number mapped to 1 for
+// open or 0 for closed. Comparing signatures rather than counts is what makes
+// this trustworthy — DOB amends records constantly, so a building can gain one
+// violation and resolve another and the total never moves.
+
+const CHECK_EVERY_MS = 12 * 60 * 60 * 1000;  // NYC Open Data refreshes ~daily
+const SIG_CAP = 3000;                        // keep storage bounded on huge buildings
+
+async function violationSignature(bin) {
+  const ids = [DATASETS.legacy, DATASETS.safety, DATASETS.ecb];
+  const sources = ["DOB", "SAFETY", "ECB"];
+  const settled = await Promise.allSettled(
+    ids.map(id => socrataAll(id, { $where: `bin='${sq(bin)}'` }, { pageSize: 1000, cap: SIG_CAP }))
+  );
+
+  // If every dataset failed we know nothing — recording an empty signature would
+  // make the next check report every violation as brand new.
+  if (settled.every(s => s.status === "rejected")) {
+    throw new Error(settled[0].reason?.message || "Check failed");
+  }
+  // A partial failure is just as dangerous: the missing dataset's violations
+  // would look resolved. Better to skip this round and try later.
+  if (settled.some(s => s.status === "rejected")) {
+    throw new Error("Some datasets did not respond");
+  }
+
+  const sig = {};
+  // Gathered on the same pass, since we already have every row in hand.
+  const stats = { total: 0, open: 0, lastIssue: "", lastResolved: "" };
+
+  settled.forEach((s, i) => {
+    for (const row of s.value) {
+      const v = normalize(row, sources[i], bin);
+      if (!v.number || v.number === "—") continue;
+
+      // A violation can appear in more than one dataset; count it once.
+      if (!(v.number in sig)) {
+        stats.total++;
+        if (v.isOpen) stats.open++;
+      }
+      sig[v.number] = v.isOpen ? 1 : 0;
+
+      if (v.sortKey > stats.lastIssue) stats.lastIssue = v.sortKey;
+
+      // Only the legacy dataset carries a disposition date, so "last resolved"
+      // is best-effort rather than complete.
+      if (!v.isOpen) {
+        const d = sortableDate(pick(row, "disposition_date", "certification_date"));
+        if (d && d > stats.lastResolved) stats.lastResolved = d;
+      }
+    }
+  });
+  return { sig, stats };
+}
+
+function diffSignatures(before, after) {
+  const added = [], resolved = [], reopened = [];
+  for (const num of Object.keys(after)) {
+    if (!(num in before)) added.push(num);
+    else if (before[num] === 1 && after[num] === 0) resolved.push(num);
+    else if (before[num] === 0 && after[num] === 1) reopened.push(num);
+  }
+  return { added, resolved, reopened };
+}
+
+const hasChanges = c => Boolean(c && (c.added?.length || c.resolved?.length || c.reopened?.length));
+
+// Age and owner come from PLUTO, keyed on BBL. Fetched alongside the violation
+// check rather than on demand, so sorting and grouping work without opening
+// every building first.
+async function fetchLotFacts(bbl) {
+  if (!bbl) return null;
+  const rows = await socrata(OWNER.pluto, {
+    bbl,
+    $select: "ownername, yearbuilt, unitsres, bldgclass, numfloors",
+    $limit: 1
+  });
+  const r = rows[0];
+  if (!r) return null;
+  const year = parseInt(r.yearbuilt, 10);
+  return {
+    // PLUTO writes 0 for unknown rather than leaving it blank.
+    yearBuilt: year > 1600 ? year : null,
+    ownerName: (r.ownername || "").trim(),
+    unitsRes: parseInt(r.unitsres, 10) || 0,
+    bldgClass: r.bldgclass || "",
+    floors: parseFloat(r.numfloors) || 0,
+    ownerKind: classifyOwner(r.ownername)
+  };
+}
+
+/**
+ * Walk the saved list and refresh anything stale. Runs in the background on
+ * load — never blocks the page, and updates badges as each building finishes.
+ */
+async function checkSavedBuildings({ force = false } = {}) {
+  const due = Saved.list().filter(b =>
+    force || !b.checkedAt || Date.now() - b.checkedAt > CHECK_EVERY_MS);
+  if (!due.length) return;
+
+  // Two at a time. Each building is three paged queries, and without a token
+  // everyone shares one anonymous rate limit.
+  let next = 0;
+  const worker = async () => {
+    while (next < due.length) {
+      const entry = due[next++];
+      try {
+        const { sig, stats } = await violationSignature(entry.bin);
+        // A missing lot record should not sink the whole check.
+        const facts = await fetchLotFacts(entry.bbl).catch(err => {
+          console.warn("lot facts for " + entry.bin + ":", err.message);
+          return entry.facts || null;
+        });
+        const first = !entry.sig;                       // baseline, not news
+        const changes = first ? null : diffSignatures(entry.sig, sig);
+
+        await Saved.update(entry.bin, {
+          sig,
+          stats,
+          facts: facts || entry.facts || null,
+          checkedAt: Date.now(),
+          // Keep unseen changes from a previous visit rather than overwriting
+          // them — otherwise opening the site twice erases the alert.
+          changes: hasChanges(changes) ? changes : (entry.seen ? null : entry.changes || null),
+          seen: hasChanges(changes) ? false : entry.seen
+        });
+        refreshChangeUI();
+      } catch (err) {
+        console.warn("check failed for BIN " + entry.bin + ":", err.message);
+        // Deliberately not stamping checkedAt: a failed check should retry,
+        // not be treated as a clean result for the next 12 hours.
+      }
+    }
+  };
+  await Promise.all([worker(), worker()]);
+}
+
+/** Total buildings with unseen changes. */
+function changedCount() {
+  return Saved.list().filter(b => !b.seen && hasChanges(b.changes)).length;
+}
+
+function changeSummary(b) {
+  if (b.seen || !hasChanges(b.changes)) return "";
+  const parts = [];
+  if (b.changes.added?.length)    parts.push(`${b.changes.added.length} new`);
+  if (b.changes.resolved?.length) parts.push(`${b.changes.resolved.length} resolved`);
+  if (b.changes.reopened?.length) parts.push(`${b.changes.reopened.length} reopened`);
+  return parts.join(" · ");
+}
+
+// Repaint whatever view is currently showing, without disturbing the user.
+function refreshChangeUI() {
+  paintCount();
+  if (document.body.classList.contains("view-saved")) showSaved();
+}
+
+
 // Simple filters (?bbl=X) rather than $where, because these columns are numeric
 // in some datasets and text in others, and a quoted $where fails against a
 // numeric column.
@@ -887,7 +1410,9 @@ async function fetchOwnership(bin, bbl) {
 
   const jobs = [
     // Tax-lot owner. Needs BBL, which not every geocode result carries.
-    bbl ? socrata(OWNER.pluto, { bbl, $select: "ownername, address, bldgclass, unitsres, yearbuilt", $limit: 1 })
+    bbl ? socrata(OWNER.pluto, { bbl,
+            $select: "ownername, address, bldgclass, unitsres, unitstotal, yearbuilt, yearalter1, numfloors, lotarea, bldgarea",
+            $limit: 1 })
         : Promise.resolve([]),
     // HPD registration is keyed on BIN. Newest first: buildings re-register
     // annually and old rows stay in the dataset.
@@ -901,7 +1426,12 @@ async function fetchOwnership(bin, bbl) {
     return [];
   });
 
-  if (pluto[0]) out.plutoOwner = pluto[0];
+  if (pluto[0]) {
+    out.plutoOwner = pluto[0];
+    // Render the age strip as soon as the lot record lands, without waiting for
+    // the two chained HPD calls that follow.
+    renderFacts(pluto[0]);
+  }
 
   // Contacts hang off the registration, so this second call can only happen
   // once we have a registration id.
@@ -918,6 +1448,47 @@ async function fetchOwnership(bin, bbl) {
     }
   }
   return out;
+}
+
+// Building class codes are two characters; the first letter is the useful part.
+const CLASS_FAMILY = {
+  A: "One-family home", B: "Two-family home", C: "Walk-up apartments",
+  D: "Elevator apartments", E: "Warehouse", F: "Factory / industrial",
+  G: "Garage / gas", H: "Hotel", I: "Health facility", J: "Theatre",
+  K: "Store", L: "Loft", M: "Religious", N: "Asylum / home", O: "Office",
+  P: "Public assembly", Q: "Recreation", R: "Condominium", S: "Mixed residential/commercial",
+  T: "Transportation", U: "Utility", V: "Vacant land", W: "Educational", Y: "Government", Z: "Misc."
+};
+
+function renderFacts(p) {
+  const el = $("#bfacts");
+  if (!el || !p) return;
+
+  const year = parseInt(p.yearbuilt, 10);
+  // PLUTO writes 0 when the year is unknown rather than leaving it empty.
+  const built = year > 1600 ? year : null;
+  const age = built ? new Date().getFullYear() - built : null;
+  const altered = parseInt(p.yearalter1, 10);
+  const floors = parseFloat(p.numfloors) || 0;
+  const units = parseInt(p.unitstotal, 10) || 0;
+  const res = parseInt(p.unitsres, 10) || 0;
+
+  const tiles = [
+    built && { k: "Built", v: built, sub: age === 0 ? "this year" : age + " year" + (age === 1 ? "" : "s") + " old" },
+    altered > 1600 && { k: "Last altered", v: altered },
+    floors && { k: "Floors", v: floors % 1 ? floors : Math.round(floors) },
+    units && { k: "Units", v: units, sub: res ? res + " residential" : "no residential" },
+    p.bldgclass && { k: "Class " + p.bldgclass, v: CLASS_FAMILY[p.bldgclass[0]] || "\u2014", wide: true }
+  ].filter(Boolean);
+
+  if (!tiles.length) return;
+
+  el.innerHTML = tiles.map(t => `
+    <div class="bfact ${t.wide ? "wide" : ""}">
+      <span class="bfact-v">${esc(t.v)}</span>
+      <span class="bfact-k">${esc(t.k)}</span>
+      ${t.sub ? `<span class="bfact-s">${esc(t.sub)}</span>` : ""}
+    </div>`).join("");
 }
 
 function contactName(c) {
@@ -951,9 +1522,18 @@ const ROLE_LABEL = {
 const ROLE_RANK = ["IndividualOwner", "CorporateOwner", "JointOwner", "HeadOfficer",
                    "Shareholder", "Officer", "Lessee", "Agent", "SiteManager"];
 
-function renderOwnership(o) {
+function renderOwnership(o, bin) {
   const el = $("#ownership");
   if (!el) return;
+
+  // HPD names the owner type explicitly, so upgrade the saved building's guess
+  // whenever we happen to have the real answer in hand.
+  if (bin && Saved.has(bin) && o.contacts.length) {
+    const types = o.contacts.map(c => c.type);
+    const kind = types.includes("IndividualOwner") ? "person"
+               : types.includes("CorporateOwner") ? "company" : "";
+    if (kind && Saved.get(bin)?.hpdOwnerKind !== kind) Saved.update(bin, { hpdOwnerKind: kind });
+  }
 
   if (!o.plutoOwner && !o.contacts.length) {
     el.innerHTML = `<h3 class="section">Ownership<span>${o.failed ? "unavailable" : "nothing on file"}</span></h3>
@@ -1036,6 +1616,10 @@ function dobLink(v) {
 function rowHtml(v) {
   const cls = v.cls?.toString().startsWith("1") ? "c1" : v.cls?.toString().startsWith("2") ? "c2" : "";
   const link = dobLink(v);
+  const flag = !recordChanges ? ""
+    : recordChanges.added?.includes(v.number)    ? `<span class="flag new">New</span>`
+    : recordChanges.reopened?.includes(v.number) ? `<span class="flag new">Reopened</span>`
+    : recordChanges.resolved?.includes(v.number) ? `<span class="flag done">Resolved</span>` : "";
   const actions = link ? `
     <div class="actions">
       <a class="dob" href="${link.href}" target="_blank" rel="noopener">${link.label}</a>
@@ -1045,6 +1629,7 @@ function rowHtml(v) {
 
   return `<div class="row ${cls} ${v.isOpen ? "open" : ""}">
     <div class="top">
+      ${flag}
       <span class="num">${esc(v.number)}</span>
       <span class="muted">${esc(v.date)}</span>
       ${v.type ? `<span class="muted">${esc(v.type)}</span>` : ""}
