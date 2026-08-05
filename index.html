@@ -201,6 +201,14 @@
   .empty.warn{border-color:var(--class2);border-style:solid;border-left-width:4px;color:#7A5300;background:#FFF8EC}
   #fatal{display:none;background:var(--class1);color:#fff;padding:12px 16px;font-size:13px;line-height:1.6;margin-top:14px}
 
+  .owner{background:var(--card);border:1px solid var(--rule);border-left:5px solid var(--class3);
+         padding:11px 14px;margin-bottom:6px}
+  .owner.lot{border-left-color:var(--permit)}
+  .owner-top{display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;justify-content:space-between}
+  .owner-name{font-weight:600;font-size:14px}
+  .owner-role{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#8A8F97}
+  .owner-addr{font-size:12.5px;margin-top:4px;color:#4A4F57}
+
   .status{margin-top:24px;font-size:12px;color:#8A8F97;line-height:1.7}
   .empty{background:var(--card);border:1px dashed var(--rule);padding:14px;font-size:13px;color:#666}
   .note{font-size:12px;color:#8A8F97;margin-top:10px}
@@ -280,6 +288,16 @@ const DATASETS = {
   ecb:    "6bgk-3dad"  // DOB ECB Violations (OATH/ECB summonses)
 };
 const GEO = "https://geosearch.planninglabs.nyc/v2/";
+
+// Ownership comes from two different places, and they answer different questions.
+// PLUTO gives the tax-lot owner of record — usually an LLC, sometimes just a name.
+// HPD registration gives the people and companies legally responsible for a
+// residential building, with the business addresses where notices are mailed.
+const OWNER = {
+  pluto:         "64uk-42ks", // Primary Land Use Tax Lot Output — ownername by BBL
+  registrations: "tesw-yqqr", // HPD Multiple Dwelling Registrations — BIN to registration id
+  contacts:      "feu5-w2e2"  // HPD Registration Contacts — names and mailing addresses
+};
 const BIS = "https://a810-bisweb.nyc.gov/bisweb/";
 const DOBNOW_PORTAL = "https://a810-dobnow.nyc.gov/publish/Index.html#!/";
 
@@ -668,6 +686,15 @@ async function loadBuilding(b) {
   }
 
   render(b, { legacy, safety, ecb }, errors);
+
+  // Fired after the violations render rather than awaited alongside them, so a
+  // slow ownership query never delays the thing people came for.
+  fetchOwnership(b.bin, b.bbl)
+    .then(renderOwnership)
+    .catch(err => {
+      console.error("ownership failed:", err);
+      renderOwnership({ plutoOwner: null, contacts: [], registration: null, failed: true });
+    });
   $("#out").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -746,6 +773,8 @@ function render(b, sets, errors = []) {
         <a class="dob" target="_blank" rel="noopener" href="${DOBNOW_PORTAL}">DOB NOW portal</a>
       </div>
     </div>
+
+    <div id="ownership"></div>
 
     <div class="tally">
       <div class="tile"><div class="n">${all.length}</div><div class="k">Total on file</div></div>
@@ -848,8 +877,149 @@ $("#goHome").onclick = goHome;
 Saved.load();
 
 // ---------------------------------------------------------------------------
-// Deep links into DOB's own systems
+// OWNERSHIP
 // ---------------------------------------------------------------------------
+// Simple filters (?bbl=X) rather than $where, because these columns are numeric
+// in some datasets and text in others, and a quoted $where fails against a
+// numeric column.
+async function fetchOwnership(bin, bbl) {
+  const out = { plutoOwner: null, contacts: [], registration: null, failed: false };
+
+  const jobs = [
+    // Tax-lot owner. Needs BBL, which not every geocode result carries.
+    bbl ? socrata(OWNER.pluto, { bbl, $select: "ownername, address, bldgclass, unitsres, yearbuilt", $limit: 1 })
+        : Promise.resolve([]),
+    // HPD registration is keyed on BIN. Newest first: buildings re-register
+    // annually and old rows stay in the dataset.
+    socrata(OWNER.registrations, { bin, $order: "lastregistrationdate DESC", $limit: 1 })
+  ];
+
+  const [pluto, regs] = (await Promise.allSettled(jobs)).map(r => {
+    if (r.status === "fulfilled") return r.value;
+    console.warn("ownership lookup:", r.reason);
+    out.failed = true;
+    return [];
+  });
+
+  if (pluto[0]) out.plutoOwner = pluto[0];
+
+  // Contacts hang off the registration, so this second call can only happen
+  // once we have a registration id.
+  if (regs[0]?.registrationid) {
+    out.registration = regs[0];
+    try {
+      out.contacts = await socrata(OWNER.contacts, {
+        registrationid: regs[0].registrationid,
+        $limit: 50
+      });
+    } catch (err) {
+      console.warn("contacts lookup:", err);
+      out.failed = true;
+    }
+  }
+  return out;
+}
+
+function contactName(c) {
+  const person = [c.firstname, c.lastname].filter(Boolean).join(" ").trim();
+  // Corporate owners have no personal name; individual owners have no company.
+  return c.corporationname?.trim() || person || "";
+}
+
+function contactAddress(c) {
+  const street = [c.businesshousenumber, c.businessstreetname].filter(Boolean).join(" ").trim();
+  const apt = c.businessapartment ? `Apt ${c.businessapartment}` : "";
+  const cityLine = [c.businesscity, c.businessstate].filter(Boolean).join(", ");
+  const full = [street, apt, cityLine, c.businesszip].filter(Boolean).join(", ");
+  return full || "";
+}
+
+// HPD uses terse role codes. Show what they mean.
+const ROLE_LABEL = {
+  HeadOfficer: "Head officer",
+  IndividualOwner: "Individual owner",
+  CorporateOwner: "Corporate owner",
+  JointOwner: "Joint owner",
+  SiteManager: "Site manager",
+  Agent: "Managing agent",
+  Officer: "Officer",
+  Shareholder: "Shareholder",
+  Lessee: "Lessee"
+};
+
+// Owners with a real stake come first; agents and managers after.
+const ROLE_RANK = ["IndividualOwner", "CorporateOwner", "JointOwner", "HeadOfficer",
+                   "Shareholder", "Officer", "Lessee", "Agent", "SiteManager"];
+
+function renderOwnership(o) {
+  const el = $("#ownership");
+  if (!el) return;
+
+  if (!o.plutoOwner && !o.contacts.length) {
+    el.innerHTML = `<h3 class="section">Ownership<span>${o.failed ? "unavailable" : "nothing on file"}</span></h3>
+      <div class="empty">${o.failed
+        ? "Ownership lookup failed. Reload to try again."
+        : `No owner on record. HPD registration is only required for residential buildings
+           with three or more units, or rented one- and two-family homes — so commercial
+           buildings and owner-occupied houses often show nothing here.`}</div>`;
+    return;
+  }
+
+  const sorted = [...o.contacts].sort((a, b) => {
+    const ai = ROLE_RANK.indexOf(a.type), bi = ROLE_RANK.indexOf(b.type);
+    return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
+  });
+
+  // The same person often appears under several roles on one registration.
+  const seen = new Set();
+  const cards = sorted.filter(c => {
+    const key = contactName(c) + "|" + contactAddress(c);
+    if (!contactName(c) || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).map(c => {
+    const addr = contactAddress(c);
+    return `<div class="owner">
+      <div class="owner-top">
+        <span class="owner-name">${esc(contactName(c))}</span>
+        <span class="owner-role">${esc(ROLE_LABEL[c.type] || c.type || "Contact")}</span>
+      </div>
+      ${addr ? `<div class="owner-addr">${esc(addr)}</div>` : `<div class="owner-addr muted">No address on file</div>`}
+    </div>`;
+  }).join("");
+
+  const p = o.plutoOwner;
+  const reg = o.registration;
+
+  el.innerHTML = `
+    <h3 class="section">Ownership<span>${cards ? sorted.length + " contacts" : "tax records only"}</span></h3>
+
+    ${p ? `<div class="owner lot">
+      <div class="owner-top">
+        <span class="owner-name">${esc(p.ownername || "Not listed")}</span>
+        <span class="owner-role">Owner of record</span>
+      </div>
+      <div class="owner-addr muted">
+        ${[p.bldgclass ? "Class " + esc(p.bldgclass) : "",
+           p.unitsres ? esc(p.unitsres) + " residential units" : "",
+           p.yearbuilt && p.yearbuilt !== "0" ? "Built " + esc(p.yearbuilt) : ""
+          ].filter(Boolean).join(" · ")}
+      </div>
+    </div>` : ""}
+
+    ${cards || ""}
+
+    ${reg ? `<p class="note">HPD registration last filed
+      ${esc(fmt(reg.lastregistrationdate))}${reg.registrationenddate
+        ? `, expires ${esc(fmt(reg.registrationenddate))}` : ""}.</p>` : ""}
+
+    <p class="note">Owner of record is the tax-lot owner from city land records and is often a
+    holding company. The contacts below it are who HPD holds responsible for the building.
+    Addresses are business mailing addresses filed with the city; for small buildings that is
+    sometimes the owner's home. Public record, but worth using accordingly.</p>`;
+}
+
+
 function dobLink(v) {
   if (v.source === "DOB" && v.isn && v.number !== "—") {
     return { label: "Open in BIS", href: BIS + "ActionViolationDisplayServlet?" + new URLSearchParams({
