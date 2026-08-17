@@ -113,6 +113,13 @@
   body.view-record .wrap{padding-top:0}
   .navbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
 
+  #toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,14px);
+         background:var(--ink);color:#fff;padding:12px 18px;font-size:13px;line-height:1.4;
+         max-width:min(420px,90vw);z-index:300;opacity:0;pointer-events:none;
+         transition:opacity .18s,transform .18s;box-shadow:4px 4px 0 var(--permit)}
+  #toast.show{opacity:1;transform:translate(-50%,0)}
+  @media (prefers-reduced-motion:reduce){ #toast{transition:none} }
+
   /* ---------- accounts ---------- */
   .topright{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
   .whoami{font-size:10px;letter-spacing:.06em;text-transform:none;color:#8A8F97;
@@ -137,6 +144,7 @@
              color:#8A8F97;margin:14px 0 5px}
   .authinput{width:100%;padding:12px 13px;font:inherit;font-size:15px;background:#fff;
              border:1.5px solid var(--rule);color:var(--ink);border-radius:0}
+  .authform{margin:0}
   .authinput:focus{outline:none;border-color:var(--ink);box-shadow:3px 3px 0 var(--permit)}
   .authgo{width:100%;margin-top:20px;padding:14px;font-family:'Archivo',sans-serif;
           font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase;
@@ -399,7 +407,8 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
           <circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4.2-4.2"></path>
         </svg>
-        <input id="q" type="text" autocomplete="off" spellcheck="false"
+        <input id="q" type="search" name="building-address" spellcheck="false"
+               autocomplete="off" autocorrect="off" autocapitalize="off" data-lpignore="true" data-form-type="other"
                placeholder="Enter a full address, e.g. 20 Exchange Place"
                aria-label="Building address"
                role="combobox" aria-expanded="false" aria-controls="suggest" aria-autocomplete="list">
@@ -1488,13 +1497,21 @@ function renderAuth(view) {
   authBody.querySelector("input")?.focus();
 }
 
+// The fields sit inside a real <form>. Without one, browsers and password
+// managers scan the whole page looking for somewhere to autofill, which is how
+// the address search box ended up being treated as a login field.
+// onsubmit returns false so the browser never tries to navigate.
 function authFields(withPassword, pwLabel, pwAuto) {
   return `
-    <label class="authlabel" for="authEmail">Email</label>
-    <input class="authinput" id="authEmail" type="email" autocomplete="email" value="${esc(lastEmail)}">
-    ${withPassword ? `
-      <label class="authlabel" for="authPass">${esc(pwLabel)}</label>
-      <input class="authinput" id="authPass" type="password" autocomplete="${pwAuto}">` : ""}`;
+    <form class="authform" onsubmit="return false" autocomplete="on">
+      <label class="authlabel" for="authEmail">Email</label>
+      <input class="authinput" id="authEmail" name="email" type="email"
+             autocomplete="email" value="${esc(lastEmail)}">
+      ${withPassword ? `
+        <label class="authlabel" for="authPass">${esc(pwLabel)}</label>
+        <input class="authinput" id="authPass" name="password" type="password"
+               autocomplete="${pwAuto}">` : ""}
+    </form>`;
 }
 
 function authSignIn() {
@@ -1606,8 +1623,10 @@ function authReset() {
   authBody.innerHTML = `
     <h2>Set a new password</h2>
     <div class="autherr" hidden></div>
-    <label class="authlabel" for="authPass">New password</label>
-    <input class="authinput" id="authPass" type="password" autocomplete="new-password">
+    <form class="authform" onsubmit="return false">
+      <label class="authlabel" for="authPass">New password</label>
+      <input class="authinput" id="authPass" name="password" type="password" autocomplete="new-password">
+    </form>
     <p class="authhint">At least 8 characters.</p>
     <button class="authgo">Save password</button>`;
   authBody.querySelector(".authgo").onclick = async () => {
@@ -1627,9 +1646,30 @@ async function onSignedIn(user) {
   paintAccount();
   await Saved.load();
   const moved = await Saved.mergeLocal();   // carry anonymous saves into the account
-  if (moved) await Saved.load();
+  if (moved) {
+    await Saved.load();
+    // Say so rather than moving someone's buildings silently.
+    toast(`${moved} building${moved === 1 ? "" : "s"} you saved before signing in ` +
+          `${moved === 1 ? "was" : "were"} added to your account.`);
+  }
   refreshChangeUI();
   checkSavedBuildings();
+}
+
+/** Brief confirmation message, bottom of the screen. */
+let toastTimer;
+function toast(message) {
+  let el = document.getElementById("toast");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "toast";
+    el.setAttribute("role", "status");
+    document.body.appendChild(el);
+  }
+  el.textContent = message;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 5000);
 }
 
 async function signOut() {
@@ -1661,6 +1701,9 @@ if (sb) {
   sb.auth.onAuthStateChange(async (event, session) => {
     if (event === "PASSWORD_RECOVERY") return openAuth("reset");
     const user = session?.user || null;
+    // INITIAL_SESSION is handled by the startup block above; acting on it here
+    // too would run the merge twice.
+    if (event === "INITIAL_SESSION") { paintAccount(); return; }
     if (user && !currentUser) await onSignedIn(user);
     else if (!user && currentUser) { currentUser = null; paintAccount(); await Saved.load(); }
     paintAccount();
@@ -1668,8 +1711,22 @@ if (sb) {
 }
 
 
-Saved.load().then(() => checkSavedBuildings());
-paintAccount();
+// Startup order matters. If a session is being restored, the page must not load
+// the browser's own list first — otherwise the anonymous list briefly becomes
+// the active one and the background check can write it into the account.
+// So: ask whether anyone is signed in, and only then decide where to read from.
+(async () => {
+  paintAccount();
+  if (sb) {
+    const { data } = await sb.auth.getSession();
+    if (data?.session?.user) {
+      await onSignedIn(data.session.user);
+      return;                      // onSignedIn loads and checks
+    }
+  }
+  await Saved.load();
+  checkSavedBuildings();
+})();
 
 // ---------------------------------------------------------------------------
 // CHANGE DETECTION
