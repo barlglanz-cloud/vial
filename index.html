@@ -39,12 +39,12 @@
 
   .hero h1{
     font-family:'Archivo Narrow',sans-serif;font-weight:700;text-transform:uppercase;
-    letter-spacing:.01em;line-height:.92;margin:0;
-    font-size:clamp(42px,9vw,86px);
+    letter-spacing:-.005em;line-height:.88;margin:0 0 0 -2px;
+    font-size:clamp(40px,8.6vw,82px);
   }
   .hero h1 em{font-style:normal;color:var(--permit)}
   .hero .lede{
-    max-width:52ch;margin:18px 0 0;font-size:14px;color:#4A4F57;
+    max-width:48ch;margin:20px 0 0;font-size:14px;line-height:1.6;color:#4A4F57;
   }
   body.has-result .hero h1{font-size:clamp(24px,4vw,32px)}
   body.has-result .hero .lede,
@@ -83,6 +83,7 @@
   input::placeholder{color:#A9AEB5}
   input:focus{outline:none}
   .field{border-top:2px solid transparent}
+  .placard{transition:box-shadow .14s}
   .placard:focus-within{box-shadow:6px 6px 0 var(--permit)}
   body.has-result .placard:focus-within{box-shadow:4px 4px 0 var(--permit)}
   .spinner{width:15px;height:15px;border:2px solid var(--rule);border-top-color:var(--permit);border-radius:50%;
@@ -111,7 +112,45 @@
   body.view-saved .wrap,
   body.view-record .wrap{padding-top:0}
   .navbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
-  .backbtn{margin-bottom:18px}
+
+  /* ---------- accounts ---------- */
+  .topright{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .whoami{font-size:10px;letter-spacing:.06em;text-transform:none;color:#8A8F97;
+          max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .authroot[hidden]{display:none}
+  .authroot{position:fixed;inset:0;z-index:200;display:flex;align-items:center;
+            justify-content:center;padding:20px}
+  .authveil{position:absolute;inset:0;background:rgba(22,24,28,.55)}
+  .authcard{position:relative;width:100%;max-width:400px;background:var(--card);
+            border:2px solid var(--ink);box-shadow:8px 8px 0 rgba(22,24,28,.18)}
+  .authcard .strip{background:var(--permit);color:#fff;padding:8px 10px 8px 14px;
+                   font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;
+                   display:flex;justify-content:space-between;align-items:center}
+  .authx{background:none;border:0;color:#fff;cursor:pointer;font-size:13px;padding:2px 4px}
+  .authx:hover,.authx:focus{color:var(--ink);outline:none}
+  .authbody{padding:22px}
+  .authbody h2{font-family:'Archivo Narrow',sans-serif;text-transform:uppercase;
+               letter-spacing:.03em;font-size:23px;margin:0 0 6px;line-height:1.1}
+  .authlede{margin:0 0 16px;font-size:13px;color:#4A4F57;line-height:1.55}
+  .authhint{margin:6px 0 0;font-size:11px;color:#8A8F97}
+  .authlabel{display:block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+             color:#8A8F97;margin:14px 0 5px}
+  .authinput{width:100%;padding:12px 13px;font:inherit;font-size:15px;background:#fff;
+             border:1.5px solid var(--rule);color:var(--ink);border-radius:0}
+  .authinput:focus{outline:none;border-color:var(--ink);box-shadow:3px 3px 0 var(--permit)}
+  .authgo{width:100%;margin-top:20px;padding:14px;font-family:'Archivo',sans-serif;
+          font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+          background:var(--ink);color:#fff;border:0;cursor:pointer}
+  .authgo:hover,.authgo:focus{background:var(--permit);outline:none}
+  .authgo:disabled{background:var(--rule);color:#8A8F97;cursor:default}
+  .authalt{display:flex;flex-wrap:wrap;gap:4px 16px;justify-content:space-between;margin-top:16px}
+  .autherr{border:1.5px solid var(--class1);background:#FDF2F2;color:#8E1616;
+           padding:10px 12px;font-size:12.5px;line-height:1.5;margin-bottom:4px}
+  .autherr[hidden]{display:none}
+  @media (prefers-reduced-motion:no-preference){
+    .authcard{animation:authin .16s ease-out both}
+    @keyframes authin{from{opacity:0;transform:translateY(6px)}}
+  }
 
   /* ---------- inline search feedback ---------- */
   .searchtools{display:flex;justify-content:flex-end;margin-top:10px}
@@ -135,26 +174,65 @@
   .ids{display:flex;flex-wrap:wrap;gap:18px;font-size:12px}
   .ids b{display:block;font-size:10px;letter-spacing:.12em;color:#8A8F97;font-weight:500}
 
-  .tally{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px}
-  .tile{background:var(--card);border:2px solid var(--ink);padding:12px 14px}
-  .tile .n{font-family:'Archivo',sans-serif;font-weight:800;font-size:32px;line-height:1}
-  .tile .k{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#8A8F97;margin-top:4px}
+  .tally{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-top:14px}
+  .tile{background:var(--card);border:1.5px solid var(--ink);padding:13px 15px}
+  .tile .n{font-family:'Archivo',sans-serif;font-weight:800;font-size:30px;line-height:1;
+           letter-spacing:-.02em}
+  .tile .k{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#8A8F97;margin-top:5px}
 
-  h3.section{font-family:'Archivo Narrow',sans-serif;text-transform:uppercase;letter-spacing:.08em;font-size:15px;
-             margin:32px 0 8px;padding-bottom:6px;border-bottom:2px solid var(--ink);
-             display:flex;justify-content:space-between;align-items:baseline}
-  h3.section span{font-family:'IBM Plex Mono';font-size:11px;color:#8A8F97;letter-spacing:0}
+  h3.section{font-family:'Archivo Narrow',sans-serif;text-transform:uppercase;letter-spacing:.07em;
+             font-size:14px;margin:34px 0 10px;padding-bottom:7px;
+             border-bottom:1.5px solid var(--ink);
+             display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+  h3.section span{font-family:'IBM Plex Mono';font-size:10px;color:#8A8F97;letter-spacing:.06em;
+                  text-transform:uppercase;white-space:nowrap}
 
-  .row{background:var(--card);border:1px solid var(--rule);border-left:5px solid var(--class3);padding:11px 14px;margin-bottom:6px}
+  /* Violation rows: date rail on the left, everything else to its right. */
+  .row{display:flex;gap:0;background:var(--card);border:1px solid var(--rule);
+       border-left:4px solid var(--class3);margin-bottom:5px;transition:border-color .12s}
   .row.c1{border-left-color:var(--class1)}
   .row.c2{border-left-color:var(--class2)}
-  .row.open{border-left-width:8px}
-  .row .top{display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;font-size:12px}
-  .row .num{font-weight:600}
-  .row .desc{margin-top:5px;font-size:13px}
-  .pill{font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;border:1px solid currentColor}
-  .pill.open{color:var(--class1)}
-  .pill.closed{color:var(--ok)}
+  .row.open{border-left-width:7px}
+  .row:hover{border-color:var(--ink)}
+  .row:hover.c1{border-left-color:var(--class1)}
+  .row:hover.c2{border-left-color:var(--class2)}
+
+  .row-date{flex:none;width:62px;padding:11px 0 11px 12px;text-align:left;
+            border-right:1px solid var(--rule);margin-right:13px}
+  .row-date .yr{display:block;font-family:'Archivo',sans-serif;font-weight:700;
+                font-size:14px;line-height:1;color:var(--ink)}
+  .row-date .md{display:block;font-size:10.5px;color:#A9AEB5;margin-top:2px;letter-spacing:.02em}
+
+  .row-main{flex:1;min-width:0;padding:11px 13px 10px 0}
+  .row .top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12px}
+  .row .vtype{color:#4A4F57;font-size:11.5px}
+  .row .money{font-family:'Archivo',sans-serif;font-weight:700;font-size:12px;color:var(--class2)}
+  .row .desc{margin-top:6px;font-size:13px;line-height:1.5;color:var(--ink)}
+
+  .row-foot{display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+            justify-content:space-between;margin-top:9px}
+  .row .num{font-size:10.5px;color:#A9AEB5;letter-spacing:.04em}
+
+  /* Quiet by default so a long list stays readable; full contrast on hover
+     or keyboard focus. Always visible on touch, where there is no hover. */
+  .rowacts{display:flex;gap:6px;opacity:.45;transition:opacity .12s}
+  .row:hover .rowacts,.row:focus-within .rowacts{opacity:1}
+  @media (hover:none){ .rowacts{opacity:1} }
+  .rowbtn{font:inherit;font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+          padding:3px 8px;border:1px solid var(--rule);background:var(--card);
+          color:#6B7078;text-decoration:none;cursor:pointer;white-space:nowrap}
+  .rowbtn:hover,.rowbtn:focus{border-color:var(--permit);color:var(--permit);outline:none}
+  .rowbtn.copied{background:var(--ok);border-color:var(--ok);color:#fff}
+
+  .pill{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;
+        border:1px solid currentColor;font-weight:500}
+  .pill.open{color:var(--class1);background:#FDF3F3}
+  .pill.closed{color:var(--ok);background:#F1F8F4}
+
+  @media (max-width:520px){
+    .row-date{width:52px;padding-left:10px;margin-right:10px}
+    .row-main{padding-right:10px}
+  }
   .muted{color:#8A8F97}
 
   .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;align-items:center}
@@ -164,7 +242,6 @@
   a.dob:hover,button.dob:hover,a.dob:focus,button.dob:focus{background:var(--permit);border-color:var(--permit);color:#fff;outline:none}
   a.dob::after{content:"↗";font-size:12px}
   button.dob.copied{background:var(--ok);border-color:var(--ok);color:#fff}
-  .actions .why{font-size:11px;color:#9AA0A8;text-transform:none;letter-spacing:0}
   .building .actions{margin-top:14px}
 
   /* ---------- top bar + saved folder ---------- */
@@ -189,11 +266,14 @@
                 border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:12px}
   .folder h2{font-family:'Archivo Narrow',sans-serif;text-transform:uppercase;letter-spacing:.04em;font-size:24px;margin:0}
   .saved-item{display:flex;align-items:center;gap:12px;background:var(--card);
-              border:1px solid var(--rule);border-left:5px solid var(--permit);padding:12px 14px;margin-bottom:6px}
+              border:1px solid var(--rule);border-left:4px solid var(--rule);
+              padding:13px 15px;margin-bottom:5px;transition:border-color .12s}
+  .saved-item:hover{border-color:var(--ink);border-left-color:var(--permit)}
   .saved-item .open{flex:1;text-align:left;font:inherit;background:none;border:0;cursor:pointer;padding:0}
   .saved-item .open:hover .addr,.saved-item .open:focus .addr{color:var(--permit);outline:none}
-  .saved-item .addr{font-weight:600;font-size:15px;display:block}
-  .saved-item .sub{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#9AA0A8}
+  .saved-item .addr{font-weight:600;font-size:15px;display:block;line-height:1.3}
+  .saved-item .sub{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#8A8F97;
+                   display:block;margin-top:3px}
   .saved-item .drop{font:inherit;font-size:16px;line-height:1;background:none;border:0;cursor:pointer;
                     color:#B4B8BE;padding:4px 6px}
   .saved-item .drop:hover,.saved-item .drop:focus{color:var(--class1);outline:none}
@@ -203,18 +283,18 @@
 
   .bfacts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
   .bfacts:empty{display:none}
-  .bfact{border:1px solid var(--rule);padding:8px 12px;min-width:88px;background:var(--paper)}
+  .bfact{border:1px solid var(--rule);padding:9px 13px;min-width:86px;background:var(--paper)}
   .bfact.wide{min-width:150px}
   .bfact-v{display:block;font-family:'Archivo',sans-serif;font-weight:800;font-size:19px;line-height:1.1}
   .bfact-k{display:block;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#8A8F97;margin-top:3px}
   .bfact-s{display:block;font-size:10px;color:#6B7078;margin-top:2px}
 
-  .owner{background:var(--card);border:1px solid var(--rule);border-left:5px solid var(--class3);
-         padding:11px 14px;margin-bottom:6px}
-  .owner.lot{border-left-color:var(--permit)}
+  .owner{background:var(--card);border:1px solid var(--rule);border-left:4px solid var(--rule);
+         padding:12px 15px;margin-bottom:5px}
+  .owner.lot{border-left-color:var(--ink)}
   .owner-top{display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;justify-content:space-between}
   .owner-name{font-weight:600;font-size:14px}
-  .owner-role{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#8A8F97}
+  .owner-role{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#A9AEB5}
   .owner-addr{font-size:12.5px;margin-top:4px;color:#4A4F57}
 
   .alertdot{background:var(--permit);color:#fff;padding:1px 6px;font-family:'Archivo',sans-serif;
@@ -264,9 +344,16 @@
                   letter-spacing:.04em;font-size:14px}
   .ownerhead-n{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#8A8F97}
 
+  :focus-visible{outline:2px solid var(--permit);outline-offset:2px}
+
   .status{margin-top:24px;font-size:12px;color:#8A8F97;line-height:1.7}
-  .empty{background:var(--card);border:1px dashed var(--rule);padding:14px;font-size:13px;color:#666}
-  .note{font-size:12px;color:#8A8F97;margin-top:10px}
+  .linkbtn{background:none;border:0;padding:0;font:inherit;font-size:13px;color:var(--permit);
+           text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+  .linkbtn:hover,.linkbtn:focus{color:var(--ink);outline:none}
+
+  .empty{background:var(--card);border:1px dashed var(--rule);padding:16px;font-size:13px;
+         color:#6B7078;line-height:1.55}
+  .note{font-size:11.5px;color:#8A8F97;margin-top:12px;line-height:1.6;max-width:70ch}
   .warn{border-left:4px solid var(--class2);padding-left:10px}
   .loading{margin-top:26px;border:2px solid var(--ink);background:var(--card);padding:16px 18px}
   .bar{height:4px;background:var(--rule);overflow:hidden;margin-top:10px}
@@ -290,7 +377,11 @@
 
   <div class="topbar">
     <button class="mark" id="goHome">Building Record</button>
-    <button class="savedbtn" id="openSaved">Saved buildings <span class="badge" id="savedCount" data-n="0">0</span></button>
+    <div class="topright">
+      <span class="whoami" id="whoami" hidden></span>
+      <button class="savedbtn" id="accountBtn">Sign in</button>
+      <button class="savedbtn" id="openSaved">Saved buildings <span class="badge" id="savedCount" data-n="0">0</span></button>
+    </div>
   </div>
 
   <div class="hero">
@@ -327,14 +418,36 @@
 
   <div id="out"></div>
 
+  <div class="authroot" id="authRoot" hidden>
+    <div class="authveil" data-close></div>
+    <div class="authcard" role="dialog" aria-modal="true">
+      <div class="strip">
+        <span id="authStrip">Account</span>
+        <button class="authx" data-close aria-label="Close">&#10005;</button>
+      </div>
+      <div class="authbody" id="authBody"></div>
+    </div>
+  </div>
+
 </div>
 
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
 // ---------------------------------------------------------------------------
 // CONFIG
 // ---------------------------------------------------------------------------
 // Free Socrata app token: https://data.cityofnewyork.us/profile/edit/developer_settings
-const APP_TOKEN = "Z3PynDHMJAcOPGDrzwmX4PH3g";
+const APP_TOKEN = "";
+
+// Supabase: the database and login service. Both values below are meant to be
+// public — they identify the project, and row-level security in the database is
+// what actually protects each person's data.
+const SUPABASE_URL = "https://jpanbalkhkeakkdblvma.supabase.co";
+const SUPABASE_KEY = "sb_publishable_X0cteeVejurwOSu3vDJOFg_kEJQ8Slo";
+
+const sb = window.supabase?.createClient(SUPABASE_URL, SUPABASE_KEY);
+let currentUser = null;
 
 const SOCRATA = "https://data.cityofnewyork.us/resource/";
 const DATASETS = {
@@ -382,6 +495,27 @@ const Saved = (() => {
   let cache = [];
   let memory = null;
 
+  // Where the list lives depends on whether anyone is signed in. Signed out it
+  // stays in this browser exactly as before, so the app works without an
+  // account. Signed in it moves to the database and follows the person between
+  // devices.
+  const online = () => Boolean(sb && currentUser);
+
+  // One saved building, flattened for the database. bin/bbl/label get real
+  // columns; everything the app tracks itself rides along in `data`.
+  const toRow = e => ({
+    user_id: currentUser.id,
+    bin: e.bin,
+    bbl: e.bbl || null,
+    label: e.label,
+    data: {
+      savedAt: e.savedAt, sig: e.sig, stats: e.stats, facts: e.facts,
+      changes: e.changes, seen: e.seen, checkedAt: e.checkedAt,
+      hpdOwnerKind: e.hpdOwnerKind
+    }
+  });
+  const fromRow = r => ({ bin: r.bin, bbl: r.bbl || "", label: r.label, ...(r.data || {}) });
+
   async function readRaw() {
     try { if (window.storage) { const r = await window.storage.get(KEY, false); return r ? r.value : null; } } catch {}
     try { const v = localStorage.getItem(KEY); if (v !== null) return v; } catch {}
@@ -392,15 +526,59 @@ const Saved = (() => {
     try { if (window.storage) { await window.storage.set(KEY, value, false); return; } } catch {}
     try { localStorage.setItem(KEY, value); } catch {}
   }
-  async function persist() { await writeRaw(JSON.stringify(cache)); paintCount(); }
+  async function persist() {
+    if (online()) {
+      // Upsert the whole list. Lists are small, and it keeps every code path
+      // that mutates `cache` working without knowing about the database.
+      const { error } = await sb.from("saved_buildings")
+        .upsert(cache.map(toRow), { onConflict: "user_id,bin" });
+      if (error) console.error("save failed:", error.message);
+    } else {
+      await writeRaw(JSON.stringify(cache));
+    }
+    paintCount();
+  }
 
   return {
     async load() {
+      if (online()) {
+        const { data, error } = await sb.from("saved_buildings")
+          .select("bin, bbl, label, data")
+          .order("created_at", { ascending: false });
+        if (error) { console.error("load failed:", error.message); cache = []; }
+        else cache = (data || []).map(fromRow);
+        paintCount();
+        return cache;
+      }
       const raw = await readRaw();
       try { cache = raw ? JSON.parse(raw) : []; } catch { cache = []; }
       if (!Array.isArray(cache)) cache = [];
       paintCount();
       return cache;
+    },
+
+    /**
+     * Called once after signing in: push anything saved anonymously into the
+     * account. Someone should be able to try the app before handing over an
+     * email, and not lose what they saved when they do.
+     */
+    async mergeLocal() {
+      if (!online()) return 0;
+      let local = [];
+      try { local = JSON.parse((await readRaw()) || "[]"); } catch {}
+      if (!Array.isArray(local) || !local.length) return 0;
+
+      const known = new Set(cache.map(x => x.bin));
+      const incoming = local.filter(x => x.bin && !known.has(x.bin));
+      if (incoming.length) {
+        cache = [...incoming, ...cache];
+        await persist();
+      }
+      // Clear the browser copy only once the upload succeeded, so a failure
+      // partway through cannot lose the list.
+      try { localStorage.removeItem(KEY); } catch {}
+      memory = null;
+      return incoming.length;
     },
     list()      { return cache; },
     has(bin)    { return cache.some(x => x.bin === bin); },
@@ -419,7 +597,13 @@ const Saved = (() => {
     },
     async remove(bin) {
       cache = cache.filter(x => x.bin !== bin);
-      await persist();
+      if (online()) {
+        const { error } = await sb.from("saved_buildings").delete().eq("bin", bin);
+        if (error) console.error("remove failed:", error.message);
+        paintCount();
+      } else {
+        await persist();
+      }
     },
     async toggle(b) {
       if (this.has(b.bin)) await this.remove(b.bin);
@@ -1170,8 +1354,9 @@ function showSaved() {
       </div>
       ${list.length ? (groupOwner ? groupsHtml(list) : list.map(savedCard).join(""))
       : all.length
-        ? `<div class="empty">No saved buildings match this filter.
-           <button class="authlink" data-filter="all">Show all</button></div>`
+        ? `<div class="empty">No saved buildings match ${activeFilters.size > 1
+             ? "these filters together" : "this filter"}.
+           <button class="linkbtn" data-filter="__clear">Clear filters</button></div>`
         : `<div class="empty">Nothing saved yet. Go back, look up a building and hit
            <strong>Save building</strong> to keep it here.</div>`}
     </div>`;
@@ -1239,7 +1424,252 @@ $("#goHome").onclick = goHome;
 
 // Check saved buildings in the background on every visit. Deliberately not
 // awaited: the page is usable immediately and badges appear as results land.
+
+// ---------------------------------------------------------------------------
+// ACCOUNTS
+// ---------------------------------------------------------------------------
+// All the credential handling belongs to Supabase: password hashing, session
+// tokens, verification links, expiry. None of that is worth writing ourselves.
+
+const authRoot = document.getElementById("authRoot");
+const authBody = document.getElementById("authBody");
+const authStrip = document.getElementById("authStrip");
+let lastEmail = "";
+
+function openAuth(view) { authRoot.hidden = false; renderAuth(view || "signin"); }
+function closeAuth() { authRoot.hidden = true; authBody.innerHTML = ""; }
+
+// Supabase messages are terse and sometimes internal-sounding. Map the ones
+// people actually hit onto something they can act on.
+function friendlyAuthError(err) {
+  const m = (err?.message || "").toLowerCase();
+  if (m.includes("invalid login credentials")) return "That email and password don't match.";
+  if (m.includes("email not confirmed")) return "Check your inbox and confirm your email first.";
+  if (m.includes("already registered")) return "That email already has an account. Try signing in.";
+  if (m.includes("password should be")) return "Passwords need at least 8 characters.";
+  if (m.includes("rate limit") || m.includes("too many")) return "Too many attempts. Wait a minute and try again.";
+  if (m.includes("failed to fetch")) return "Could not reach the server \u2014 check your connection.";
+  return err?.message || "Something went wrong. Try again.";
+}
+
+function authError(msg) {
+  const box = authBody.querySelector(".autherr");
+  if (!box) return;
+  box.textContent = msg || "";
+  box.hidden = !msg;
+}
+
+function authBusy(on, label) {
+  const btn = authBody.querySelector(".authgo");
+  if (!btn) return;
+  btn.disabled = on;
+  btn.textContent = on ? "Working\u2026" : label;
+}
+
+const authVal = id => authBody.querySelector("#" + id)?.value.trim() ?? "";
+
+function validEmail(v) {
+  if (!v) return "Enter your email address.";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) return "That doesn't look like an email address.";
+  return null;
+}
+
+function renderAuth(view) {
+  const views = { signin: authSignIn, signup: authSignUp, sent: authSent, forgot: authForgot, reset: authReset };
+  (views[view] || authSignIn)();
+  authBody.querySelectorAll("[data-go]").forEach(el => {
+    el.onclick = () => renderAuth(el.dataset.go);
+  });
+  authBody.querySelectorAll("input").forEach(el => {
+    el.onkeydown = e => {
+      if (e.key === "Enter") { e.preventDefault(); authBody.querySelector(".authgo")?.click(); }
+    };
+  });
+  authBody.querySelector("input")?.focus();
+}
+
+function authFields(withPassword, pwLabel, pwAuto) {
+  return `
+    <label class="authlabel" for="authEmail">Email</label>
+    <input class="authinput" id="authEmail" type="email" autocomplete="email" value="${esc(lastEmail)}">
+    ${withPassword ? `
+      <label class="authlabel" for="authPass">${esc(pwLabel)}</label>
+      <input class="authinput" id="authPass" type="password" autocomplete="${pwAuto}">` : ""}`;
+}
+
+function authSignIn() {
+  authStrip.textContent = "Sign in";
+  authBody.innerHTML = `
+    <h2>Sign in</h2>
+    <p class="authlede">Your saved buildings follow you to any device.</p>
+    <div class="autherr" hidden></div>
+    ${authFields(true, "Password", "current-password")}
+    <button class="authgo">Sign in</button>
+    <div class="authalt">
+      <button class="linkbtn" data-go="forgot">Forgot password?</button>
+      <button class="linkbtn" data-go="signup">Create an account</button>
+    </div>`;
+  authBody.querySelector(".authgo").onclick = async () => {
+    const email = authVal("authEmail"), password = authVal("authPass");
+    const bad = validEmail(email) || (password ? null : "Enter your password.");
+    if (bad) return authError(bad);
+    lastEmail = email;
+    authBusy(true, "Sign in");
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    authBusy(false, "Sign in");
+    if (error) return authError(friendlyAuthError(error));
+    closeAuth();
+    await onSignedIn(data.user);
+  };
+}
+
+function authSignUp() {
+  authStrip.textContent = "Create account";
+  authBody.innerHTML = `
+    <h2>Create an account</h2>
+    <p class="authlede">Free. Your email is used to confirm the account and, later,
+      to alert you when a saved building gets a new violation.</p>
+    <div class="autherr" hidden></div>
+    ${authFields(true, "Password", "new-password")}
+    <p class="authhint">At least 8 characters.</p>
+    <button class="authgo">Create account</button>
+    <div class="authalt">
+      <button class="linkbtn" data-go="signin">I already have an account</button>
+    </div>`;
+  authBody.querySelector(".authgo").onclick = async () => {
+    const email = authVal("authEmail"), password = authVal("authPass");
+    const bad = validEmail(email) || (password.length >= 8 ? null : "Use at least 8 characters.");
+    if (bad) return authError(bad);
+    lastEmail = email;
+    authBusy(true, "Create account");
+    const { error } = await sb.auth.signUp({
+      email, password,
+      options: { emailRedirectTo: location.origin }
+    });
+    authBusy(false, "Create account");
+    if (error) return authError(friendlyAuthError(error));
+    renderAuth("sent");
+  };
+}
+
+function authSent() {
+  authStrip.textContent = "Check your email";
+  authBody.innerHTML = `
+    <h2>Check your email</h2>
+    <p class="authlede">A confirmation link is on its way to <strong>${esc(lastEmail)}</strong>.
+      Open it and you're in.</p>
+    <div class="autherr" hidden></div>
+    <p class="authhint">Nothing after a minute or two? Look in spam \u2014 confirmation
+      mail often lands there.</p>
+    <button class="authgo">Resend the email</button>
+    <div class="authalt"><button class="linkbtn" data-go="signin">Back to sign in</button></div>`;
+  authBody.querySelector(".authgo").onclick = async () => {
+    authBusy(true, "Resend the email");
+    const { error } = await sb.auth.resend({
+      type: "signup", email: lastEmail,
+      options: { emailRedirectTo: location.origin }
+    });
+    authBusy(false, "Resend the email");
+    if (error) return authError(friendlyAuthError(error));
+    authBody.querySelector(".authhint").textContent = "Sent again just now.";
+  };
+}
+
+function authForgot() {
+  authStrip.textContent = "Reset password";
+  authBody.innerHTML = `
+    <h2>Reset your password</h2>
+    <p class="authlede">We'll email a link to set a new one.</p>
+    <div class="autherr" hidden></div>
+    ${authFields(false)}
+    <button class="authgo">Send reset link</button>
+    <div class="authalt"><button class="linkbtn" data-go="signin">Back to sign in</button></div>`;
+  authBody.querySelector(".authgo").onclick = async () => {
+    const email = authVal("authEmail");
+    const bad = validEmail(email);
+    if (bad) return authError(bad);
+    lastEmail = email;
+    authBusy(true, "Send reset link");
+    await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin });
+    authBusy(false, "Send reset link");
+    // Deliberately unconditional. Confirming which addresses have accounts
+    // would turn this form into a way to test whether someone is a user.
+    authBody.innerHTML = `
+      <h2>Check your email</h2>
+      <p class="authlede">If <strong>${esc(email)}</strong> has an account,
+        a reset link is on its way.</p>`;
+  };
+}
+
+function authReset() {
+  authStrip.textContent = "New password";
+  authBody.innerHTML = `
+    <h2>Set a new password</h2>
+    <div class="autherr" hidden></div>
+    <label class="authlabel" for="authPass">New password</label>
+    <input class="authinput" id="authPass" type="password" autocomplete="new-password">
+    <p class="authhint">At least 8 characters.</p>
+    <button class="authgo">Save password</button>`;
+  authBody.querySelector(".authgo").onclick = async () => {
+    const password = authVal("authPass");
+    if (password.length < 8) return authError("Use at least 8 characters.");
+    authBusy(true, "Save password");
+    const { error } = await sb.auth.updateUser({ password });
+    authBusy(false, "Save password");
+    if (error) return authError(friendlyAuthError(error));
+    closeAuth();
+  };
+}
+
+// ---- account state ---------------------------------------------------------
+async function onSignedIn(user) {
+  currentUser = user;
+  paintAccount();
+  await Saved.load();
+  const moved = await Saved.mergeLocal();   // carry anonymous saves into the account
+  if (moved) await Saved.load();
+  refreshChangeUI();
+  checkSavedBuildings();
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+  currentUser = null;
+  paintAccount();
+  await Saved.load();          // falls back to this browser's own list
+  goHome();
+}
+
+function paintAccount() {
+  const btn = document.getElementById("accountBtn");
+  if (!btn) return;
+  btn.textContent = currentUser ? "Sign out" : "Sign in";
+  btn.onclick = currentUser ? signOut : () => openAuth("signin");
+  const who = document.getElementById("whoami");
+  if (who) {
+    who.textContent = currentUser?.email || "";
+    who.hidden = !currentUser;
+  }
+}
+
+if (sb) {
+  authRoot.querySelectorAll("[data-close]").forEach(el => el.onclick = closeAuth);
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeAuth(); });
+
+  // Fires on load with an existing session, after sign-in, and when someone
+  // arrives back from a password-reset link.
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === "PASSWORD_RECOVERY") return openAuth("reset");
+    const user = session?.user || null;
+    if (user && !currentUser) await onSignedIn(user);
+    else if (!user && currentUser) { currentUser = null; paintAccount(); await Saved.load(); }
+    paintAccount();
+  });
+}
+
+
 Saved.load().then(() => checkSavedBuildings());
+paintAccount();
 
 // ---------------------------------------------------------------------------
 // CHANGE DETECTION
@@ -1621,23 +2051,32 @@ function rowHtml(v) {
     : recordChanges.reopened?.includes(v.number) ? `<span class="flag new">Reopened</span>`
     : recordChanges.resolved?.includes(v.number) ? `<span class="flag done">Resolved</span>` : "";
   const actions = link ? `
-    <div class="actions">
-      <a class="dob" href="${link.href}" target="_blank" rel="noopener">${link.label}</a>
-      <button class="dob" data-copy="${esc(v.number)}">Copy number</button>
-      ${link.paste ? `<span class="why">DOB NOW has no direct link — paste the number into Violation Search.</span>` : ""}
-    </div>` : "";
+      <span class="rowacts">
+        <a class="rowbtn" href="${link.href}" target="_blank" rel="noopener"
+           title="${link.paste ? "DOB NOW has no direct link \u2014 paste this number into Violation Search" : "Open this record on the DOB site"}">${link.label}</a>
+        <button class="rowbtn" data-copy="${esc(v.number)}">Copy</button>
+      </span>` : "";
+
+  const [mm, dd, yyyy] = (v.date || "").split("/");
 
   return `<div class="row ${cls} ${v.isOpen ? "open" : ""}">
-    <div class="top">
-      ${flag}
-      <span class="num">${esc(v.number)}</span>
-      <span class="muted">${esc(v.date)}</span>
-      ${v.type ? `<span class="muted">${esc(v.type)}</span>` : ""}
-      ${v.status ? `<span class="pill ${v.isOpen ? "open" : "closed"}">${esc(v.status)}</span>` : ""}
-      ${v.money ? `<span class="muted">$${esc(v.money)}</span>` : ""}
+    <div class="row-date" aria-label="${esc(v.date)}">
+      ${yyyy ? `<span class="yr">${esc(yyyy)}</span><span class="md">${esc(mm)}/${esc(dd)}</span>`
+             : `<span class="md">\u2014</span>`}
     </div>
-    ${v.desc ? `<div class="desc">${esc(v.desc)}</div>` : ""}
-    ${actions}
+    <div class="row-main">
+      <div class="top">
+        ${flag}
+        ${v.status ? `<span class="pill ${v.isOpen ? "open" : "closed"}">${esc(v.status)}</span>` : ""}
+        ${v.type ? `<span class="vtype">${esc(v.type)}</span>` : ""}
+        ${v.money ? `<span class="money">$${esc(v.money)}</span>` : ""}
+      </div>
+      ${v.desc ? `<div class="desc">${esc(v.desc)}</div>` : ""}
+      <div class="row-foot">
+        <span class="num">${esc(v.number)}</span>
+        ${actions}
+      </div>
+    </div>
   </div>`;
 }
 
