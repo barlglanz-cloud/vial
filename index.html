@@ -157,6 +157,13 @@
              border:1.5px solid var(--rule);color:var(--ink);border-radius:0}
   .authform{margin:0}
   .authinput:focus{outline:none;border-color:var(--ink);box-shadow:3px 3px 0 var(--permit)}
+  .pwwrap{position:relative;display:flex;align-items:center}
+  .pwwrap .authinput{padding-right:62px}
+  .pweye{position:absolute;right:8px;background:none;border:0;cursor:pointer;font:inherit;
+         font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#8A8F97;padding:6px 6px}
+  .pweye:hover,.pweye:focus{color:var(--permit);outline:none}
+  .pweye[aria-pressed="true"]{color:var(--ink)}
+
   .authgo{width:100%;margin-top:20px;padding:14px;font-family:'Archivo',sans-serif;
           font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase;
           background:var(--ink);color:#fff;border:0;cursor:pointer}
@@ -1619,6 +1626,24 @@ function renderAuth(view) {
   authBody.querySelectorAll("[data-go]").forEach(el => {
     el.onclick = () => renderAuth(el.dataset.go);
   });
+  // Show/hide the password. Wired inside renderAuth because these screens are
+  // rebuilt each time, so a one-time binding would be lost on the next view.
+  authBody.querySelectorAll("[data-eye]").forEach(btn => {
+    btn.onclick = () => {
+      const field = authBody.querySelector("#" + btn.dataset.eye);
+      if (!field) return;
+      const showing = field.type === "text";
+      field.type = showing ? "password" : "text";
+      btn.textContent = showing ? "Show" : "Hide";
+      btn.setAttribute("aria-pressed", String(!showing));
+      btn.setAttribute("aria-label", showing ? "Show password" : "Hide password");
+      // Keep the cursor where it was; changing type sends it to the start.
+      const at = field.value.length;
+      field.focus();
+      field.setSelectionRange(at, at);
+    };
+  });
+
   authBody.querySelectorAll("input").forEach(el => {
     el.onkeydown = e => {
       if (e.key === "Enter") { e.preventDefault(); authBody.querySelector(".authgo")?.click(); }
@@ -1639,8 +1664,12 @@ function authFields(withPassword, pwLabel, pwAuto) {
              autocomplete="email" value="${esc(lastEmail)}">
       ${withPassword ? `
         <label class="authlabel" for="authPass">${esc(pwLabel)}</label>
-        <input class="authinput" id="authPass" name="password" type="password"
-               autocomplete="${pwAuto}">` : ""}
+        <div class="pwwrap">
+          <input class="authinput" id="authPass" name="password" type="password"
+                 autocomplete="${pwAuto}">
+          <button type="button" class="pweye" data-eye="authPass"
+                  aria-label="Show password" aria-pressed="false">Show</button>
+        </div>` : ""}
     </form>`;
 }
 
@@ -1755,7 +1784,11 @@ function authReset() {
     <div class="autherr" hidden></div>
     <form class="authform" onsubmit="return false">
       <label class="authlabel" for="authPass">New password</label>
-      <input class="authinput" id="authPass" name="password" type="password" autocomplete="new-password">
+      <div class="pwwrap">
+        <input class="authinput" id="authPass" name="password" type="password" autocomplete="new-password">
+        <button type="button" class="pweye" data-eye="authPass"
+                aria-label="Show password" aria-pressed="false">Show</button>
+      </div>
     </form>
     <p class="authhint">At least 8 characters.</p>
     <button class="authgo">Save password</button>`;
