@@ -710,6 +710,7 @@ function clearSearch() {
   closeList();
   clearMessage();
   $("#out").innerHTML = "";
+  setRoute("");
   document.body.classList.remove("has-result", "view-saved", "view-record");
   cameFromSaved = false;
   paintClear();
@@ -908,7 +909,91 @@ async function submit() {
 // ---------------------------------------------------------------------------
 // BUILDING RECORD
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// WHERE YOU ARE
+// ---------------------------------------------------------------------------
+// The current view lives in the URL, so a refresh returns you to it instead of
+// the front page. The hash is used rather than a real path because the app is a
+// single file with no server routing — everything after # never reaches Vercel.
+//   (nothing)      the search page
+//   #saved         the saved buildings page
+//   #b/1001234     one building's record
+//
+// Guarded so that setting the hash does not re-trigger the navigation that set it.
+let routing = false;
+
+function setRoute(hash) {
+  if (location.hash === hash) return;
+  routing = true;
+  // replaceState rather than assignment: opening a building should not stack up
+  // history entries you have to press Back through repeatedly.
+  history.replaceState(null, "", hash || location.pathname + location.search);
+  routing = false;
+}
+
+// A building record needs an address to display, but the URL only carries a BIN.
+// Try the saved list, then this tab's own memory of it, then fall back to the
+// violation records, which carry the address themselves.
+async function buildingFromBin(bin) {
+  const saved = Saved.get(bin);
+  if (saved) return saved;
+
+  try {
+    const cached = JSON.parse(sessionStorage.getItem("last-building") || "null");
+    if (cached?.bin === bin) return cached;
+  } catch {}
+
+  try {
+    const rows = await socrata(DATASETS.legacy, {
+      $select: "house_number, street, boro, bin", $where: `bin='${sq(bin)}'`, $limit: 1
+    });
+    if (rows[0]) {
+      const r = rows[0];
+      return {
+        bin,
+        bbl: "",
+        label: [r.house_number, r.street].filter(Boolean).join(" ").trim() || ("BIN " + bin)
+      };
+    }
+  } catch (err) {
+    console.warn("could not resolve BIN " + bin + ":", err.message);
+  }
+  return { bin, bbl: "", label: "BIN " + bin };
+}
+
+async function applyRoute({ initial = false } = {}) {
+  const hash = location.hash;
+
+  // On a plain first load the page is already showing the search view. Calling
+  // goHome() would focus the input, which pops the keyboard open on phones.
+  if (!hash && initial) return;
+
+  if (hash === "#saved") {
+    if (currentUser === null && sb) await Saved.load();
+    showSaved();
+    return;
+  }
+
+  const m = hash.match(/^#b\/(\d{1,10})$/);
+  if (m) {
+    const b = await buildingFromBin(m[1]);
+    input.value = b.label;
+    await loadBuilding(b);
+    return;
+  }
+
+  goHome();
+}
+
+// Back and forward buttons, and anyone editing the address bar.
+window.addEventListener("hashchange", () => { if (!routing) applyRoute(); });
+
 async function loadBuilding(b) {
+  setRoute("#b/" + b.bin);
+  // Remembered so a refresh can show the address immediately rather than
+  // waiting on a lookup to resolve it.
+  try { sessionStorage.setItem("last-building", JSON.stringify(
+    { bin: b.bin, bbl: b.bbl || "", label: b.label })); } catch {}
   document.body.classList.add("has-result", "view-record");
   document.body.classList.remove("view-saved");
   paintClear();
@@ -1323,6 +1408,7 @@ function groupsHtml(list) {
 }
 
 function showSaved() {
+  setRoute("#saved");
   syncIfStale();          // fire and forget; re-renders itself if anything changed
   // A page of its own: the hero and the whole search apparatus are hidden, so
   // there is nothing here but the buildings.
@@ -1428,6 +1514,7 @@ function wireRecordNav() {
 }
 
 function goHome() {
+  setRoute("");
   cameFromSaved = false;
   document.body.classList.remove("has-result", "view-saved", "view-record");
   $("#out").innerHTML = "";
@@ -1753,11 +1840,13 @@ if (sb) {
     const { data } = await sb.auth.getSession();
     if (data?.session?.user) {
       await onSignedIn(data.session.user);
-      return;                      // onSignedIn loads and checks
+      applyRoute({ initial: true }); // restore whatever view the URL names
+      return;
     }
   }
   await Saved.load();
   checkSavedBuildings();
+  applyRoute({ initial: true });
 })();
 
 // ---------------------------------------------------------------------------
