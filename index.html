@@ -1323,6 +1323,7 @@ function groupsHtml(list) {
 }
 
 function showSaved() {
+  syncIfStale();          // fire and forget; re-renders itself if anything changed
   // A page of its own: the hero and the whole search apparatus are hidden, so
   // there is nothing here but the buildings.
   document.body.classList.add("has-result", "view-saved");
@@ -1375,6 +1376,16 @@ function showSaved() {
   check.onclick = async () => {
     check.disabled = true;
     check.textContent = "Checking…";
+    // Re-read the list first. Without this, a building saved on another device
+    // stays invisible here until the page is refreshed — the check would only
+    // ever look at buildings this tab already knew about.
+    const before = Saved.list().length;
+    await Saved.load();
+    const arrived = Saved.list().length - before;
+    if (arrived > 0) {
+      toast(`${arrived} building${arrived === 1 ? "" : "s"} added from another device.`);
+      showSaved();
+    }
     await checkSavedBuildings({ force: true });
     // showSaved has re-rendered by now if anything changed; guard the stale node.
     const btn = $("#checkNow");
@@ -1679,6 +1690,27 @@ async function signOut() {
   await Saved.load();          // falls back to this browser's own list
   goHome();
 }
+
+// Coming back to a tab that has been sitting in the background is the moment
+// stale data is most likely and least expected — you were just on your phone.
+// Re-reading on focus means the list is current without anyone pressing
+// anything. Rate-limited so switching tabs rapidly does not hammer the database.
+let lastSync = 0;
+async function syncIfStale() {
+  if (!currentUser || document.hidden) return;
+  if (Date.now() - lastSync < 30000) return;
+  lastSync = Date.now();
+
+  const before = Saved.list().length;
+  await Saved.load();
+  if (Saved.list().length !== before) {
+    refreshChangeUI();
+    if (document.body.classList.contains("view-saved")) showSaved();
+  }
+}
+
+document.addEventListener("visibilitychange", syncIfStale);
+window.addEventListener("focus", syncIfStale);
 
 function paintAccount() {
   const btn = document.getElementById("accountBtn");
